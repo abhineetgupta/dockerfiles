@@ -1,14 +1,14 @@
 You may choose to use the provided docker image or your local python environment. To use docker environment, follow these steps -
 1. Install docker for your OS from their website.
 2. After unzipping the file, `cd` into the directory.
-3. From the directory, run the following command to build the docker image. The image will install the pip packages in the Dockerfile. To install any other packages, add them to the list.
+3. From the directory, run the following command to build the docker image. The image will install the conda packages in the Dockerfile. To install any other packages, add them to the list.
 ```
 docker build -t devenv .
 ```
 4. `cd` into the directory that you will be use as the working directory for this project.
 5. Start a docker container from the image above -
 ```
-docker run -it -v $(pwd):/notebooks --name pydev -p 8888:8888 devenv
+docker run -it -v $(pwd):/home/jovyan --name pydev -p 8888:8888 devenv
 ```
 7. You can access jupyter notebooks through your browser on 127.0.0.1:8888
 8. To stop or restart the container, you may use -

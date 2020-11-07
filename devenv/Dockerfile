@@ -1,56 +1,100 @@
-FROM python:3-stretch
+# Copyright (c) Jupyter Development Team.
+# Distributed under the terms of the Modified BSD License.
 
 # Modified by Abhineet Gupta
 
-# Pick up some dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
-        curl \
-        libfreetype6-dev \
-        libhdf5-serial-dev \
-        libpng-dev \
-        libzmq3-dev \
-        pkg-config \
-        rsync \
-        software-properties-common \
-        unzip \
-        && \
-    apt-get clean && \
+ARG BASE_CONTAINER=jupyter/minimal-notebook
+FROM $BASE_CONTAINER
+
+LABEL maintainer="Jupyter Project <jupyter@googlegroups.com>"
+
+USER root
+
+# ffmpeg for matplotlib anim & dvipng for latex labels
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ffmpeg dvipng && \
     rm -rf /var/lib/apt/lists/*
 
-RUN pip3 --no-cache-dir install \
-        Pillow \
-        geopy \
-        h5py \
-        ipykernel \
-        jupyter \
-        matplotlib \
-        numpy \
-        pandas \
-        psycopg2 \
-        scipy \
-        sklearn \
-        scikit-image \
-        sqlalchemy \
-        && \
-    python3 -m ipykernel.kernelspec
+USER $NB_UID
 
-RUN ln -s -f /usr/bin/python3 /usr/bin/python
+# Install Python 3 packages
+RUN conda install --quiet --yes \
+    'beautifulsoup4=4.9.*' \
+    'conda-forge::blas=*=openblas' \
+    'black' \
+    'bokeh=2.0.*' \
+    'bottleneck=1.3.*' \
+    'cloudpickle=1.4.*' \
+    'cython=0.29.*' \
+    'dask=2.15.*' \
+    'dill=0.3.*' \
+    'geopandas' \
+    'geopy' \
+    'h5py=2.10.*' \
+    'hdf5=1.10.*' \
+    'ipywidgets=7.5.*' \
+    'ipympl=0.5.*'\
+    'matplotlib-base=3.2.*' \
+    'netcdf4' \
+    # numba update to 0.49 fails resolving deps.
+    'numba=0.48.*' \
+    'numexpr=2.7.*' \
+    'pandas=1.0.*' \
+    'patsy=0.5.*' \
+    'pillow' \
+    'protobuf=3.11.*' \
+    'psycopg2' \
+    'pyngl' \
+    'pynio' \
+    'pyqt' \
+    'pytables=3.6.*' \
+    'scikit-image=0.16.*' \
+    'scikit-learn=0.22.*' \
+    'scipy=1.4.*' \
+    'seaborn=0.10.*' \
+    'sqlalchemy=1.3.*' \
+    'statsmodels=0.11.*' \
+    'sympy=1.5.*' \
+    'vincent=0.4.*' \
+    'widgetsnbextension=3.5.*'\
+    'xlrd=1.2.*' \
+    && \
+    conda clean --all -f -y && \
+    # Activate ipywidgets extension in the environment that runs the notebook server
+    jupyter nbextension enable --py widgetsnbextension --sys-prefix && \
+    # Also activate ipywidgets extension for JupyterLab
+    # Check this URL for most recent compatibilities
+    # https://github.com/jupyter-widgets/ipywidgets/tree/master/packages/jupyterlab-manager
+    jupyter labextension install @jupyter-widgets/jupyterlab-manager@^2.0.0 --no-build && \
+    jupyter labextension install @bokeh/jupyter_bokeh@^2.0.0 --no-build && \
+    jupyter labextension install jupyter-matplotlib@^0.7.2 --no-build && \
+    jupyter lab build -y && \
+    jupyter lab clean -y && \
+    npm cache clean --force && \
+    rm -rf "/home/${NB_USER}/.cache/yarn" && \
+    rm -rf "/home/${NB_USER}/.node-gyp" && \
+    fix-permissions "${CONDA_DIR}" && \
+    fix-permissions "/home/${NB_USER}"
+
+# Install facets which does not have a pip or conda package at the moment
+WORKDIR /tmp
+RUN git clone https://github.com/PAIR-code/facets.git && \
+    jupyter nbextension install facets/facets-dist/ --sys-prefix && \
+    rm -rf /tmp/facets && \
+    fix-permissions "${CONDA_DIR}" && \
+    fix-permissions "/home/${NB_USER}"
+
+# Import matplotlib the first time to build the font cache.
+ENV XDG_CACHE_HOME="/home/${NB_USER}/.cache/"
+
+RUN MPLBACKEND=Agg python -c "import matplotlib.pyplot" && \
+    fix-permissions "/home/${NB_USER}"
+
+USER $NB_UID
 
 # Set up our notebook config.
-COPY jupyter_notebook_config.py /root/.jupyter/
+COPY notebook.json /home/${NB_USER}/.jupyter/nbconfig/
 
-# Jupyter has issues with being run directly:
-#   https://github.com/ipython/ipython/issues/7062
-# We just add a little wrapper script.
-COPY run_jupyter.sh /
+WORKDIR $HOME
 
-# IPython
-EXPOSE 8888
-
-WORKDIR "/notebooks"
-
-RUN chmod +x /run_jupyter.sh
-CMD ["/run_jupyter.sh", "--allow-root"]
-
-# docker build -t devenv .
+# docker build -t devcon .
