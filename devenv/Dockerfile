@@ -55,6 +55,7 @@ RUN conda install --quiet --yes \
     'sqlalchemy=1.3.*' \
     'statsmodels=0.11.*' \
     'sympy=1.5.*' \
+    'tweepy' \
     'vincent=0.4.*' \
     'widgetsnbextension=3.5.*'\
     'xlrd=1.2.*' \
