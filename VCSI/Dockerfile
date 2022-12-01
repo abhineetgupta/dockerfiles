@@ -1,4 +1,4 @@
-From python:3.7-stretch
+From python:3.10.4-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
@@ -18,4 +18,4 @@ WORKDIR "/videos"
 
 # docker build -t vcsi .
 # docker run  -it -v $(pwd):/videos/mnt --name vcsi --entrypoint /bin/bash vcsi
-# vcsi "mnt/<filename>" -t -g 3x12 --end-delay-percent 2 --template metadata_template.ini -o mnt/output.png
+# vcsi "mnt/<filename>" -t -g 3x12 --end-delay-percent 10 --template metadata_template.ini -o mnt/output.png
