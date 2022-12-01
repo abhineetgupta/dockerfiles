@@ -8,7 +8,7 @@ docker build -t devenv .
 4. `cd` into the directory that you will be use as the working directory for this project.
 5. Start a docker container from the image above -
 ```
-docker run -it -v $(pwd):/home/jovyan --name pydev -p 8888:8888 devenv
+docker run -it -v $(pwd):/home/jovyan/scripts --name pydev -p 8888:8888 devenv
 ```
 7. You can access jupyter notebooks through your browser on 127.0.0.1:8888
 8. To stop or restart the container, you may use -
